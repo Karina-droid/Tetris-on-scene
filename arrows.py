@@ -1,19 +1,18 @@
-import scene
+from scene import *
 import sound
 
 
-def sw(): return scene.get_screen_size()[0]
-def sh(): return scene.get_screen_size()[1]
+def sw(): return get_screen_size()[0]
+def sh(): return get_screen_size()[1]
 def bw(): return 100
 def bh(): return 100
 
 right = left = down = up = None
 
 icons = {
-	     'iob:arrow_down_b_256' : (sw()/4*3, 60),
 	     'iob:arrow_up_b_256' : (sw()/4*3, bh() + 60),
-	     'iob:arrow_left_b_256' : (sw()/4*3 - 95, bh()),
-	     'iob:arrow_right_b_256' : (sw()/4*3 + 95, bh())
+	     'iob:arrow_left_b_256' : (sw()/4*3 - 55, bh() - 35),
+	     'iob:arrow_right_b_256' : (sw()/4*3 + 55, bh() - 35)
 	      }
 
 
