@@ -6,7 +6,7 @@ sw, sh = get_screen_size()
 rect_w = sw/3  #343.33
 rect_h = 612 #668
 side = int(rect_w/10) 
-colors = ['red', 'orange']
+colors = ['red', 'orange', 'yellow']
 grounded_blocks = []
 
 new = False
@@ -38,9 +38,9 @@ class Shape(SpriteNode):
 		self.RIGHT = False
 		self.LEFT = False
 		
-		num = random.randrange(0, 2)
+		self.num = random.randrange(0, 3)
 		
-		x = random.randrange(int(-rect_w/2), int(rect_w/2) - num*side, side) + side/2
+		x = random.randrange(int(-rect_w/2), int(rect_w/2) - self.num*side, side) + side/2
 		y = rect_h/2 - side/2
 		
 		dot =  [[
@@ -51,49 +51,83 @@ class Shape(SpriteNode):
 				 [[x, y], [x+side, y]],
 				 [[x, y], [x, y-side]]
 									   ]
+									   
+		Z = [
+			  [[x, y], [x+side, y], [x+side, y-side], [x + 2*side, y-side]],
+			  [[x+side, y], [x+side, y-side], [x, y-side], [x, y - 2*side]]
+			  																]
+			  
+			  
 		
-		shapes = [dot, line]
-		shape = shapes[num]
-		var = random.choice(range(len(shape)))
+		self.shapes = [dot, line, Z]
 		
-		self.shape = []
+		#num chooses from list of shapes
+		self.shape = self.shapes[self.num]
+		#var chooses the rotation of the shape
+		self.var = random.choice(range(len(self.shape)))
 		
-		for pos in shape[var]:
+		self.figure = []
+		
+		for pos in self.shape[self.var]:
 			block = SpriteNode('pzl:Yellow3', 
 								position=(pos[0], pos[1]), 
-								color=colors[shapes.index(shape)],
+								color=colors[self.shapes.index(self.shape)],
 								size=(side, side))
-			self.shape.append(block)
+			self.figure.append(block)
 			
 					
 	def move_down(self):
-		for block in self.shape:
+		for block in self.figure:
 			y = block.position.y - side
 			block.position = Point(block.position.x, y) 
 		
 				
 	def left_right(self):
 		if self.RIGHT:
-			right_x = max([b.position.x for b in self.shape])
+			#chooses the rightest block
+			right_x = max([b.position.x for b in self.figure])
+			#checks that the block isn't getting out of frame
 			if right_x != 153:
-				for block in self.shape:
+				for block in self.figure:
 					x = block.position.x + side
 					block.position = Point(x, block.position.y)
+			self.RIGHT = False
 						
 		elif self.LEFT:
-			left_x = min([b.position.x for b in self.shape])
+			left_x = min([b.position.x for b in self.figure])
 			if left_x != -153:
-				for block in self.shape:
+				for block in self.figure:
 					x = block.position.x - side
 					block.position = Point(x, block.position.y)
+		self.LEFT = False
+		
 	
-	
-	def fall_abruptly(self):
-		pass
-	
+	def rotate_shape(self):
+		#to know in which rotation the figure was before rotation
+		self.var += 1
+		if self.var >= len(self.shape):
+			self.var = 0
+			
+		#other blocks will move around the root_block
+		root_block = self.figure[len(self.figure)//2]
+		x, y = root_block.position
+		#p1 - blocks that were to the left (or upper) of root_block, p2 - to the right (or lower)
+		p1 = [self.figure[i] for i in range(self.figure.index(root_block))]
+		p2 = [self.figure[i] for i in range(self.figure.index(root_block)+1, len(self.figure))]
+		
+		for block in p1:
+			if self.var == 0:
+				x = block.position.x - side
+				y = block.position.y - side
+				block.position = Point(x, y)
+			elif self.var == 1:
+				x = block.position.x + side
+				y = block.position.y + side
+				block.position = Point(x, y)
+			
 	
 	def if_grounded(self):
-		for block in self.shape:
+		for block in self.figure:
 			if block.position.y < -rect_h/2 + side:
 				return True
 			else:
@@ -121,9 +155,9 @@ class Game(Scene):
 			if not self.figure.if_grounded():
 				self.figure.move_down()
 			else:
-				for block in self.figure.shape:
+				for block in self.figure.figure:
 					grounded_blocks.append(block)
-					self.figure.shape = []
+					self.figure.figure = []
 				global new
 				new = True
 				
@@ -145,6 +179,9 @@ class Game(Scene):
 				elif 'left' in arw.icon:
 					self.figure.LEFT = True
 					self.figure.left_right()
+					
+				elif 'up' in arw.icon:
+					self.figure.rotate_shape()
 			
 	
 	def touch_ended(self, touch):
@@ -159,7 +196,7 @@ class Game(Scene):
 
 	def add_figure(self):
 		self.figure = Shape()
-		for block in self.figure.shape:
+		for block in self.figure.figure:
 			self.grey_rect.add_child(block)
 			global new
 			new = False
