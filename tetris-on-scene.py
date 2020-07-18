@@ -40,22 +40,22 @@ class Shape(SpriteNode):
 		
 		self.num = random.randrange(0, 3)
 		
-		x = random.randrange(int(-rect_w/2), int(rect_w/2) - self.num*side, side) + side/2
+		x = random.randrange(int(-rect_w/2) + side, int(rect_w/2) - self.num*side, side) + side/2
 		y = rect_h/2 - side/2
 		
 		dot =  [[
-				  [x, y]
+				  [0, 0]
 						 ]]
 		 		
 		line = [
-				 [[x, y], [x+side, y]],
-				 [[x, y], [x, y-side]]
-									   ]
+				 [[0, 0], [-side, 0]],
+				 [[0, 0], [0, -side]]
+									  ]
 									   
 		Z = [
-			  [[x, y], [x+side, y], [x+side, y-side], [x + 2*side, y-side]],
-			  [[x+side, y], [x+side, y-side], [x, y-side], [x, y - 2*side]]
-			  																]
+			  [[0, 0], [-side, 0], [0, -side], [side, -side]],
+			  [[0, 0], [0, -side], [-side, -side], [-side, -2*side]]
+			  												   		 ]
 			  
 			  
 		
@@ -70,7 +70,7 @@ class Shape(SpriteNode):
 		
 		for pos in self.shape[self.var]:
 			block = SpriteNode('pzl:Yellow3', 
-								position=(pos[0], pos[1]), 
+								position=(x + pos[0], y + pos[1]), 
 								color=colors[self.shapes.index(self.shape)],
 								size=(side, side))
 			self.figure.append(block)
@@ -83,6 +83,15 @@ class Shape(SpriteNode):
 		
 				
 	def left_right(self):
+		for block in self.figure:
+			for b in grounded_blocks:
+				#to check if there's a block to the right at the same height. if yes, the block can't move right
+				if block.position.y == b.position.y:
+					if block.position.x + side == b.position.x:
+						self.RIGHT = False
+					if block.position.x - side == b.position.x:
+						self.LEFT = False
+		
 		if self.RIGHT:
 			#chooses the rightest block
 			right_x = max([b.position.x for b in self.figure])
@@ -103,28 +112,19 @@ class Shape(SpriteNode):
 		
 	
 	def rotate_shape(self):
-		#to know in which rotation the figure was before rotation
 		self.var += 1
 		if self.var >= len(self.shape):
 			self.var = 0
-			
-		#other blocks will move around the root_block
-		root_block = self.figure[len(self.figure)//2]
-		x, y = root_block.position
-		#p1 - blocks that were to the left (or upper) of root_block, p2 - to the right (or lower)
-		p1 = [self.figure[i] for i in range(self.figure.index(root_block))]
-		p2 = [self.figure[i] for i in range(self.figure.index(root_block)+1, len(self.figure))]
 		
-		for block in p1:
-			if self.var == 0:
-				x = block.position.x - side
-				y = block.position.y - side
-				block.position = Point(x, y)
-			elif self.var == 1:
-				x = block.position.x + side
-				y = block.position.y + side
-				block.position = Point(x, y)
-			
+		#we need the cur position of the figure - any block in it
+		x, y = self.figure[0].position	
+		move_to = list(zip(self.figure, self.shape[self.var]))
+		
+		#move_to is smth like that: [(<_scene2.SpriteNode object at 0x114c33138>, [0, 0]), (<_scene2.SpriteNode object at 0x11366cae8>, [-34, 0])]
+		for m in move_to:
+			m[0].position = Point(m[1][0] + x, m[1][1] + y)
+		
+				
 	
 	def if_grounded(self):
 		for block in self.figure:
@@ -134,6 +134,7 @@ class Shape(SpriteNode):
 				for b in grounded_blocks:
 					if (block.position.x == b.position.x) and (block.position.y - side == b.position.y):
 						return True
+
 
 
 class Game(Scene):
@@ -204,3 +205,4 @@ class Game(Scene):
 			
 
 run(Game()) 
+		
