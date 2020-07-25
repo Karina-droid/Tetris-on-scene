@@ -18,6 +18,8 @@ class Board(ShapeNode, SpriteNode):
 			path = ui.Path.rect(0, 0, rect_w, rect_h)
 			path.line_width = line_width
 			
+			self.figure = None
+			
 			if stroke_color == 'lightgrey':
 				d = int(rect_w/10)
 				for l in range(int(rect_w/d)):
@@ -30,6 +32,8 @@ class Board(ShapeNode, SpriteNode):
 							 stroke_color=stroke_color,
 							 parent=parent,
 							 *args, **kwargs)
+							 
+		
 		
 
 class Shape(SpriteNode):
@@ -65,6 +69,10 @@ class Shape(SpriteNode):
 		self.shape = self.shapes[self.num]
 		#var chooses the rotation of the shape
 		self.var = random.choice(range(len(self.shape)))
+		
+		#rows show how many blocks in each row. if in any is 10 - delete_row()
+		self.rows = [0 for i in range(18)]
+		self.delete = None
 		
 		self.figure = []
 		
@@ -109,7 +117,7 @@ class Shape(SpriteNode):
 					x = block.position.x - side
 					block.position = Point(x, block.position.y)
 		self.LEFT = False
-		
+					
 	
 	def rotate_shape(self):
 		self.var += 1
@@ -118,12 +126,18 @@ class Shape(SpriteNode):
 		
 		#we need the cur position of the figure - any block in it
 		x, y = self.figure[0].position	
+		#take a block in self.figure and put it in a tuple with list where written how to move the block
 		move_to = list(zip(self.figure, self.shape[self.var]))
 		
 		#move_to is smth like that: [(<_scene2.SpriteNode object at 0x114c33138>, [0, 0]), (<_scene2.SpriteNode object at 0x11366cae8>, [-34, 0])]
 		for m in move_to:
 			m[0].position = Point(m[1][0] + x, m[1][1] + y)
-		
+			
+		for block in self.figure:
+			if block.position.x > 153:
+				for block in self.figure:
+					x = block.position.x - side
+					block.position = Point(x, block.position.y)
 				
 	
 	def if_grounded(self):
@@ -151,7 +165,7 @@ class Game(Scene):
 	
 	def update(self):
 		self.seconds += self.dt
-		if self.seconds > 0.3:
+		if self.seconds > 0.2:
 			self.seconds = 0
 			if not self.figure.if_grounded():
 				self.figure.move_down()
@@ -205,4 +219,3 @@ class Game(Scene):
 			
 
 run(Game()) 
-		
