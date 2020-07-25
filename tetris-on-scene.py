@@ -7,7 +7,9 @@ rect_w = sw/3  #343.33
 rect_h = 612 #668
 side = int(rect_w/10) 
 colors = ['red', 'orange', 'yellow']
+
 grounded_blocks = []
+rows = [0 for i in range(18)]
 
 new = False
 A = Action
@@ -139,6 +141,34 @@ class Shape(SpriteNode):
 					x = block.position.x - side
 					block.position = Point(x, block.position.y)
 				
+			if block.position.x < -153:
+				for block in self.figure:
+					x = block.position.x + side
+					block.position = Point(x, block.position.y)
+					
+	
+	#list rows stores inf how many blocks are in every row			
+	def put_in_row(self):
+		for block in self.figure:
+			#the lowest position.y of a block is -289
+			row = int((block.position.y + 289)/side)
+			rows[row] += 1
+		
+		for num in rows:
+			if num == 10:
+				self.delete = rows.index(num)
+				self.delete_row()
+				
+				
+	def delete_row(self):
+		y = self.delete*side - 289
+		for b in grounded_blocks:
+			if b.position.y == y:
+				b.run_action(A.scale_to(0))
+		for b in grounded_blocks:
+			if b.size < (side, side):
+				grounded_blocks.pop(grounded_blocks.index(b))
+				
 	
 	def if_grounded(self):
 		for block in self.figure:
@@ -172,7 +202,7 @@ class Game(Scene):
 			else:
 				for block in self.figure.figure:
 					grounded_blocks.append(block)
-					self.figure.figure = []
+				self.figure.put_in_row()
 				global new
 				new = True
 				
