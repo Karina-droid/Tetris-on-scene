@@ -1,3 +1,4 @@
+
 from scene import *
 import random, sound
 from arrows import *
@@ -10,6 +11,7 @@ colors = ['red', 'orange', 'yellow']
 
 grounded_blocks = []
 rows = [0 for i in range(18)]
+score = 0
 
 new = False
 A = Action
@@ -35,7 +37,24 @@ class Board(ShapeNode, SpriteNode):
 							 parent=parent,
 							 *args, **kwargs)
 							 
+			self.score_label = None
+			self.score_font = ('Avenir Next', 40)
 		
+	
+	#called only once at Game's init. draws the score at the beginning when it's 0
+	def draw_zero(self):
+		self.score_label = LabelNode('0', font=self.score_font, 
+							  color='black', position=(-rect_w/2, rect_h/2),
+							  anchor_point=(0, 0), parent=self)
+							  
+	
+	#removes the number of previous score and shows a new number					  
+	def show_scores(self):
+		self.score_label.remove_from_parent()
+		self.score_label = LabelNode(str(score), font=self.score_font, 
+							  color='black', position=(-rect_w/2, rect_h/2),
+							  anchor_point=(0, 0), parent=self)
+								
 		
 
 class Shape(SpriteNode):
@@ -74,7 +93,7 @@ class Shape(SpriteNode):
 		
 		#rows show how many blocks in each row. if in any is 10 - delete_row()
 		self.rows = [0 for i in range(18)]
-		self.delete = None
+		self.delete = []
 		
 		self.figure = []
 		
@@ -154,21 +173,50 @@ class Shape(SpriteNode):
 			row = int((block.position.y + 289)/side)
 			rows[row] += 1
 		
-		for num in rows:
-			if num == 10:
-				self.delete = rows.index(num)
+		for n in range(len(rows)):
+			if rows[n] == 10:
+				self.delete = n
 				self.delete_row()
-				
-				
+			
+					
+	#the func deletes row if it's full and adds score for deleting the row
 	def delete_row(self):
+		to_delete = []
+		combo = 0
+		#blocks of the full row disappear and are removed from grounded_blocks
 		y = self.delete*side - 289
 		for b in grounded_blocks:
 			if b.position.y == y:
 				b.run_action(A.scale_to(0))
+				to_delete.append(b)
+				combo += 0.1
+		for bl in to_delete:
+			grounded_blocks.pop(grounded_blocks.index(bl))
+		
+		self.rows_down()
+			
+		self.delete = None
+		
+		global score		
+		if combo == 1:
+			score += 10
+		elif combo != 1:
+			score += int(combo)*10 + 10
+			
+			
+	def rows_down(self):
+		y = self.delete*side - 289
+		#blocks upper to the full row move down	
 		for b in grounded_blocks:
-			if b.size < (side, side):
-				grounded_blocks.pop(grounded_blocks.index(b))
+			if b.position.y > y:
+				b.run_action(A.move_by(0, -34))
 				
+		for r in range(len(rows)):
+			if r == len(rows) - 1:
+				break
+			else:
+				rows[r] = rows[r+1]
+		
 	
 	def if_grounded(self):
 		for block in self.figure:
@@ -189,13 +237,15 @@ class Game(Scene):
 		
 		self.seconds = 0
 		self.figure = None
+		self.faster = 1
 		self.add_buttons()
 		self.add_figure()
-	
+		self.grey_rect.draw_zero()
+		
 	
 	def update(self):
 		self.seconds += self.dt
-		if self.seconds > 0.2:
+		if self.seconds > 0.3/self.faster:
 			self.seconds = 0
 			if not self.figure.if_grounded():
 				self.figure.move_down()
@@ -203,6 +253,7 @@ class Game(Scene):
 				for block in self.figure.figure:
 					grounded_blocks.append(block)
 				self.figure.put_in_row()
+				self.grey_rect.show_scores()
 				global new
 				new = True
 				
@@ -227,9 +278,13 @@ class Game(Scene):
 					
 				elif 'up' in arw.icon:
 					self.figure.rotate_shape()
+					
+				elif 'down' in arw.icon:
+					self.faster = 3
 			
 	
 	def touch_ended(self, touch):
+		self.faster = 1
 		for arw in self.arrows:
 			if arw.fill_color == '#969696':
 				arw.fill_color = 'white'
