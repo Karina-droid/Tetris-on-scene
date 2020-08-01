@@ -1,4 +1,3 @@
-
 from scene import *
 import random, sound
 from arrows import *
@@ -54,6 +53,17 @@ class Board(ShapeNode, SpriteNode):
 		self.score_label = LabelNode(str(score), font=self.score_font, 
 							  color='black', position=(-rect_w/2, rect_h/2),
 							  anchor_point=(0, 0), parent=self)
+							  
+							  
+	def champion_portrait(self):
+		champion = SpriteNode('IMG_0177.JPG', position=(sw/4*2 - 100, 80), 
+							   size=(410, 350), parent=self)
+		text = "Joseph Saelee, world's champion at tetris"
+		
+		explain = LabelNode(text, font=('Bradley Hand', 23), color='black',
+		 					position=champion.position-(0, 200), parent=self)
+		self.crown = SpriteNode('IMG_0181.JPG', position=champion.position+(-30, 230),
+								size=(80, 80), parent=self)
 								
 		
 
@@ -93,8 +103,6 @@ class Shape(SpriteNode):
 		
 		#rows show how many blocks in each row. if in any is 10 - delete_row()
 		self.rows = [0 for i in range(18)]
-		self.delete = []
-		
 		self.figure = []
 		
 		for pos in self.shape[self.var]:
@@ -169,53 +177,59 @@ class Shape(SpriteNode):
 	#list rows stores inf how many blocks are in every row			
 	def put_in_row(self):
 		for block in self.figure:
+			global score
+			score += 1
 			#the lowest position.y of a block is -289
 			row = int((block.position.y + 289)/side)
 			rows[row] += 1
+			delete_rows = []
 		
 		for n in range(len(rows)):
 			if rows[n] == 10:
-				self.delete = n
-				self.delete_row()
+				delete_rows.append(n)
+		combo = len(delete_rows)
+		
+		for n in delete_rows:
+			self.delete_row(n, combo)
+		if delete_rows:
+			self.rows_down(combo)
 			
 					
 	#the func deletes row if it's full and adds score for deleting the row
-	def delete_row(self):
-		to_delete = []
-		combo = 0
+	def delete_row(self, n, combo):
+		deleted = []
+		y = n*side - 289
 		#blocks of the full row disappear and are removed from grounded_blocks
-		y = self.delete*side - 289
 		for b in grounded_blocks:
 			if b.position.y == y:
 				b.run_action(A.scale_to(0))
-				to_delete.append(b)
-				combo += 0.1
-		for bl in to_delete:
-			grounded_blocks.pop(grounded_blocks.index(bl))
-		
-		self.rows_down()
-			
-		self.delete = None
-		
+				deleted.append(b)
+		print(len(grounded_blocks), 1)
+				
+		#remiving the deleted blocks from grounded_blocks		
+		for block in deleted:
+			grounded_blocks.pop(grounded_blocks.index(block))
+		print(len(grounded_blocks), 2)
+	
 		global score		
 		if combo == 1:
 			score += 10
 		elif combo != 1:
-			score += int(combo)*10 + 10
+			score = combo*10 + 10 
 			
 			
-	def rows_down(self):
-		y = self.delete*side - 289
+	def rows_down(self, n):
 		#blocks upper to the full row move down	
+		y = n*side - 323
 		for b in grounded_blocks:
 			if b.position.y > y:
-				b.run_action(A.move_by(0, -34))
+				b.run_action(A.move_by(0, -34*n))
 				
 		for r in range(len(rows)):
-			if r == len(rows) - 1:
+			if r == len(rows) - n:
 				break
 			else:
-				rows[r] = rows[r+1]
+				rows[r] = rows[r+n]
 		
 	
 	def if_grounded(self):
@@ -234,6 +248,7 @@ class Game(Scene):
 		self.background_color = 'white'
 		self.grey_rect = Board(line_width=2, parent=self, position=(sw/3, sh/2), z_position=0)
 		self.board = Board(stroke_color='purple', line_width=15, parent=self, position=(sw/3, sh/2), 		z_position=-1)
+		self.board.champion_portrait()
 		
 		self.seconds = 0
 		self.figure = None
@@ -244,8 +259,9 @@ class Game(Scene):
 		
 	
 	def update(self):
+		level = 1 + score/100
 		self.seconds += self.dt
-		if self.seconds > 0.3/self.faster:
+		if self.seconds > 0.3/(self.faster*level):
 			self.seconds = 0
 			if not self.figure.if_grounded():
 				self.figure.move_down()
@@ -304,3 +320,4 @@ class Game(Scene):
 			
 
 run(Game()) 
+		
