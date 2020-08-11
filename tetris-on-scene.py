@@ -56,9 +56,9 @@ class Board(ShapeNode, SpriteNode):
 							  
 							  
 	def champion_portrait(self):
-		champion = SpriteNode('IMG_0177.JPG', position=(sw/4*2 - 100, 80), 
+		champion = SpriteNode('IMG_0177.JPG', position=(sw/4*2 - 85, 80), 
 							   size=(410, 350), parent=self)
-		text = "Joseph Saelee, world's champion at tetris"
+		text = "Joseph Saelee, world's champion at tetris in 2018"
 		
 		explain = LabelNode(text, font=('Bradley Hand', 23), color='black',
 		 					position=champion.position-(0, 200), parent=self)
@@ -204,12 +204,10 @@ class Shape(SpriteNode):
 			if b.position.y == y:
 				b.run_action(A.scale_to(0))
 				deleted.append(b)
-		print(len(grounded_blocks), 1)
 				
 		#remiving the deleted blocks from grounded_blocks		
 		for block in deleted:
 			grounded_blocks.pop(grounded_blocks.index(block))
-		print(len(grounded_blocks), 2)
 	
 		global score		
 		if combo == 1:
@@ -261,7 +259,7 @@ class Game(Scene):
 	def update(self):
 		level = 1 + score/100
 		self.seconds += self.dt
-		if self.seconds > 0.3/(self.faster*level):
+		if self.seconds > 0.3/(self.faster*level) and not self.check_lost():
 			self.seconds = 0
 			if not self.figure.if_grounded():
 				self.figure.move_down()
@@ -273,7 +271,7 @@ class Game(Scene):
 				global new
 				new = True
 				
-			if new:
+			if new and self.figure:
 				if self.check_lost():
 					self.game_over()
 				else:
@@ -322,8 +320,8 @@ class Game(Scene):
 			
 			
 	def check_lost(self):
-		for block in self.figure.figure:
-			if block.position.y == rect_h/2 - side/2:
+		for b in grounded_blocks:
+			if b.position.y == rect_h/2 - side/2:
 				return True
 				
 				
@@ -335,4 +333,5 @@ class Game(Scene):
 			
 			
 
-run(Game())
+run(Game()) 
+				
