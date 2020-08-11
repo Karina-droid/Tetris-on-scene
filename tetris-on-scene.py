@@ -274,7 +274,10 @@ class Game(Scene):
 				new = True
 				
 			if new:
-				self.add_figure()
+				if self.check_lost():
+					self.game_over()
+				else:
+					self.add_figure()
 		
 			
 	def touch_began(self, touch):
@@ -318,6 +321,18 @@ class Game(Scene):
 			new = False
 			
 			
-
-run(Game()) 
+	def check_lost(self):
+		for block in self.figure.figure:
+			if block.position.y == rect_h/2 - side/2:
+				return True
+				
+				
+	def game_over(self):
+		game_over = LabelNode('GAME OVER', font=('comicans', 50),
+							   color='black', position=(sw/3, sh/2),
+							   parent=self)
 		
+			
+			
+
+run(Game())
