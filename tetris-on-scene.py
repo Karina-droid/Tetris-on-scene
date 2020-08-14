@@ -6,7 +6,7 @@ sw, sh = get_screen_size()
 rect_w = sw/3  #343.33
 rect_h = 612 #668
 side = int(rect_w/10) 
-colors = ['red', 'orange', 'yellow']
+colors = ['red', 'orange', 'yellow', 'lightgreen', 'lightblue', '#4753d5', '#ff00ff']
 
 grounded_blocks = []
 rows = [0 for i in range(18)]
@@ -73,28 +73,53 @@ class Shape(SpriteNode):
 		self.RIGHT = False
 		self.LEFT = False
 		
-		self.num = random.randrange(0, 3)
+		self.num = random.randrange(0, 7)
 		
 		x = random.randrange(int(-rect_w/2) + side, int(rect_w/2) - self.num*side, side) + side/2
 		y = rect_h/2 - side/2
 		
-		dot =  [[
-				  [0, 0]
-						 ]]
-		 		
-		line = [
-				 [[0, 0], [-side, 0]],
-				 [[0, 0], [0, -side]]
-									  ]
-									   
 		Z = [
 			  [[0, 0], [-side, 0], [0, -side], [side, -side]],
 			  [[0, 0], [0, -side], [-side, -side], [-side, -2*side]]
 			  												   		 ]
-			  
+		 		
+		L = [
+				 [[0, 0], [0, side], [-side, side], [0, -side]],
+				 [[0, 0], [-side, 0], [side, 0], [side, side]],
+				 [[0, 0], [0, side], [0, -side], [side, -side]],
+				 [[0, 0], [side, 0], [-side, 0], [-side, -side]],
+																  ]																  
+		O = [
+				[[0, 0], [0, -side], [-side, 0], [-side, -side]],
+				
+			  														  ]
+			  												 
+		S = [
+				[[0, 0], [side, 0], [0, -side], [-side, -side]],
+				[[0, 0], [0, side], [side, 0], [side, -side]]
+																]
+																		
+		I = [
+			   [[0, 0], [0, side], [0, -side], [0, -2*side]],
+			   [[0, 0], [side, 0], [-side, 0], [-2*side, 0]]
+			   													  ]
+			   													  
+		J = [
+			   [[0, 0], [0, side], [side, side], [0, -side]], 
+			   [[0, 0], [-side, 0], [side, 0], [side, -side]],
+			   [[0, 0], [0, side], [0, -side], [-side, -side]],
+			   [[0, 0], [side, 0], [-side, 0], [-side, side]]
+			   													]
+			   													
+		T = [
+			   [[0, 0], [0, side], [-side, 0], [side, 0]],
+			   [[0, 0], [0, side], [0, -side], [side, 0]],
+			   [[0, 0], [side, 0], [-side, 0], [0, -side]],
+			   [[0, 0], [0, side], [0, -side], [-side, 0]]
+			   												]
 			  
 		
-		self.shapes = [dot, line, Z]
+		self.shapes = [Z, L, O, S, I, J, T]
 		
 		#num chooses from list of shapes
 		self.shape = self.shapes[self.num]
@@ -105,13 +130,45 @@ class Shape(SpriteNode):
 		self.rows = [0 for i in range(18)]
 		self.figure = []
 		
+		if self.num == 4 or self.num == 5:
+			pict = 'pzl:Blue3'
+		elif self.num == 6:
+			pict = 'pzl:Purple7'
+		else:
+			pict = 'pzl:Yellow3'
+		
 		for pos in self.shape[self.var]:
-			block = SpriteNode('pzl:Yellow3', 
+			block = SpriteNode(pict, 
 								position=(x + pos[0], y + pos[1]), 
 								color=colors[self.shapes.index(self.shape)],
 								size=(side, side))
 			self.figure.append(block)
 			
+	
+	def fix_position(self):
+		#checking if any blocks are beyond the frame and if yes, how far, and then moves it to the right position
+		for block in self.figure:
+			if block.position.x > rect_w/2:
+				rightmost = max([block.position.x for block in self.figure])
+				shift = (rightmost - (rect_w/2 - side/2)) * (-1)
+				for block in self.figure:
+					x = block.position.x + shift
+					block.position = Point(x, block.position.y)
+				
+			elif block.position.x < -rect_w/2:
+				leftmost = min([block.position.x for block in self.figure])	
+				shift = (-rect_w/2 + side/2) - leftmost
+				for block in self.figure:
+					x = block.position.x + shift
+					block.position = Point(x, block.position.y)
+				
+			elif block.position.y > rect_h/2:
+				upper = max([block.position.y for block in self.figure])
+				shift = upper - (rect_h/2 - side/2)
+				for block in self.figure:
+					y = block.position.y - shift
+					block.position = Point(block.position.x, y)
+	
 					
 	def move_down(self):
 		for block in self.figure:
@@ -257,9 +314,9 @@ class Game(Scene):
 		
 	
 	def update(self):
-		level = 1 + score/100
+		level = 1 + score/400
 		self.seconds += self.dt
-		if self.seconds > 0.3/(self.faster*level) and not self.check_lost():
+		if self.seconds > 0.6/(self.faster*level) and not self.check_lost():
 			self.seconds = 0
 			if not self.figure.if_grounded():
 				self.figure.move_down()
@@ -297,7 +354,7 @@ class Game(Scene):
 					self.figure.rotate_shape()
 					
 				elif 'down' in arw.icon:
-					self.faster = 3
+					self.faster = 4
 			
 	
 	def touch_ended(self, touch):
@@ -313,6 +370,7 @@ class Game(Scene):
 
 	def add_figure(self):
 		self.figure = Shape()
+		self.figure.fix_position()
 		for block in self.figure.figure:
 			self.grey_rect.add_child(block)
 			global new
@@ -334,4 +392,3 @@ class Game(Scene):
 			
 
 run(Game()) 
-				
